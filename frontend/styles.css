@@ -279,6 +279,19 @@ section {
   aspect-ratio: 1;
 }
 
+.tech-stack > img {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.tech-stack > .typescript-icon {
+  height: 115%;
+  margin: -7.5%;
+  width: 115%;
+}
+
 /* Portfolio container */
 
 #portfolio {
