@@ -79,6 +79,17 @@ http://localhost:30073/admin
 These steps use a local Docker Compose deployment. It does not require GHCR or
 Docker Hub.
 
+If the updater is missing after cloning, the version currently on GitHub does
+not contain it yet. From Windows, commit and push the deployment files first:
+
+```powershell
+cd E:\portfolio_tom
+git add .dockerignore .gitattributes Dockerfile docker-compose.yml `
+  update-production.sh PRODUCTION.md README.md
+git commit -m "Add TrueNAS production deployment"
+git push origin main
+```
+
 ### 1. Put the project on TrueNAS
 
 Clone the GitHub repository into the dataset:
@@ -129,6 +140,34 @@ sudo docker compose down --remove-orphans
 sudo docker compose build --no-cache
 sudo docker compose up -d
 ```
+
+Verify that the container is running before trying the website:
+
+```sh
+sudo docker compose ps -a
+sudo docker compose logs --tail=100 portfolio
+sudo docker inspect portfolio-tom --format '{{.State.Status}}'
+```
+
+If it is not running, rebuild and recreate it:
+
+```sh
+sudo docker compose down --remove-orphans
+sudo docker compose build --no-cache --progress=plain
+sudo docker compose up -d --force-recreate
+```
+
+For initial local testing without a reverse proxy, set these values in
+`backend/.env`:
+
+```env
+NODE_ENV=development
+REQUIRE_HTTPS=false
+TRUST_PROXY=false
+```
+
+Then recreate the container. `REQUIRE_HTTPS=true` expects an HTTPS reverse
+proxy; direct HTTP access can otherwise redirect away from the plain container.
 
 Check the result:
 
@@ -187,7 +226,28 @@ git push
 Make the updater executable on TrueNAS:
 
 ```sh
+ls -l /mnt/main/websites/portfolio-tom/update-production.sh
 sudo chmod 750 /mnt/main/websites/portfolio-tom/update-production.sh
+```
+
+If `ls` reports that the file does not exist, sync the repository again:
+
+```sh
+cd /mnt/main/websites/portfolio-tom
+sudo git pull --ff-only
+ls -l update-production.sh
+```
+
+If the file is still missing, it was not pushed to GitHub. Push it from
+Windows using the commands above, then run `git pull --ff-only` again.
+
+If the file exists but cannot execute, normalize its line endings and set its
+permission:
+
+```sh
+sed -i 's/\r$//' update-production.sh
+sudo chmod 750 update-production.sh
+sudo ./update-production.sh
 ```
 
 Test it manually:
