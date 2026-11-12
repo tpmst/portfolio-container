@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tracking dashboard</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --background: #0c1117;
+        --surface: #151d27;
+        --surface-raised: #1d2936;
+        --border: #2b3a4b;
+        --text: #edf4f7;
+        --muted: #91a3b2;
+        --accent: #73daca;
+        --accent-dark: #173d3a;
+        --danger: #ff9292;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        background:
+          radial-gradient(circle at 85% 0%, #1a3b48 0, transparent 34rem),
+          var(--background);
+        color: var(--text);
+        font: 15px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        margin: 0;
+        min-height: 100vh;
+      }
+      main { margin: 0 auto; max-width: 1180px; padding: 2rem 1.25rem 4rem; }
+      .brand { color: var(--accent); font-size: .8rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+      header { align-items: flex-end; display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 2rem; }
+      h1, h2 { line-height: 1.2; margin: 0; }
+      h1 { font-size: clamp(1.8rem, 4vw, 2.7rem); margin-top: .35rem; }
+      h2 { font-size: 1.15rem; margin-bottom: 1rem; }
+      .subtitle { color: var(--muted); margin: .65rem 0 0; }
+      form, section {
+        background: rgba(21, 29, 39, .92);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, .18);
+        padding: clamp(1.1rem, 3vw, 1.6rem);
+        margin-bottom: 1.25rem;
+      }
+      #login-form { margin: 4rem auto; max-width: 430px; }
+      label { color: var(--muted); display: block; font-size: .85rem; font-weight: 600; margin: 1rem 0 .35rem; }
+      input, button {
+        border-radius: 9px;
+        box-sizing: border-box;
+        font: inherit;
+        padding: .75rem .85rem;
+        width: 100%;
+      }
+      input { background: var(--background); border: 1px solid var(--border); color: var(--text); }
+      input:focus { border-color: var(--accent); outline: 2px solid rgba(115, 218, 202, .2); }
+      button {
+        background: var(--accent);
+        border: 0;
+        color: #09201e;
+        cursor: pointer;
+        font-weight: 700;
+        margin-top: 1.25rem;
+        transition: transform .15s ease, filter .15s ease;
+      }
+      button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+      #logout { background: transparent; border: 1px solid var(--border); color: var(--text); margin: 0 0 1.5rem; max-width: 120px; }
+      .section-heading { align-items: center; display: flex; gap: 1rem; justify-content: space-between; }
+      .clear-button { background: transparent; border: 1px solid var(--danger); color: var(--danger); font-size: .8rem; margin: 0; max-width: 170px; padding: .5rem .7rem; width: auto; }
+      .clear-button:hover { background: rgba(255, 146, 146, .1); filter: none; }
+      .error { color: var(--danger); min-height: 1.6em; }
+      .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: .85rem; margin-bottom: 1.5rem; }
+      .stat { background: var(--surface-raised); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; }
+      .stat strong { color: var(--accent); display: block; font-size: 1.7rem; line-height: 1; margin-bottom: .45rem; }
+      .stat span { color: var(--muted); font-size: .8rem; }
+      .table-wrap { overflow-x: auto; }
+      table { border-collapse: collapse; min-width: 680px; width: 100%; }
+      th { color: var(--muted); font-size: .75rem; letter-spacing: .05em; text-transform: uppercase; }
+      th, td { border-bottom: 1px solid var(--border); padding: .85rem .65rem; text-align: left; vertical-align: top; }
+      td { color: #d7e1e6; }
+      tr:last-child td { border-bottom: 0; }
+      .empty { color: var(--muted); padding: 1rem 0; }
+      #dashboard { display: none; }
+      @media (max-width: 640px) {
+        main { padding-top: 1.25rem; }
+        header { align-items: flex-start; flex-direction: column; }
+        table { min-width: 560px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <div class="brand">Tom Stiefel / Admin</div>
+          <h1>Tracking dashboard</h1>
+          <p class="subtitle">Monitor visits, links, and messages from one place.</p>
+        </div>
+      </header>
+      <form id="login-form">
+        <div class="brand">Private area</div>
+        <h2>Sign in to continue</h2>
+        <p class="subtitle">Use your administrator credentials to view the dashboard.</p>
+        <label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" required />
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required />
+        <button type="submit">Log in</button>
+        <p id="login-error" class="error" role="alert"></p>
+      </form>
+
+      <section id="dashboard">
+        <button id="logout" type="button">Log out</button>
+        <h2>Overview</h2>
+        <div id="stats" class="stats"></div>
+        <section>
+          <div class="section-heading">
+            <h2>Contact messages</h2>
+            <button class="clear-button" id="clear-contacts" type="button">Clear messages</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Received</th><th>Email</th><th>Message</th></tr></thead>
+              <tbody id="contacts"></tbody>
+            </table>
+          </div>
+        </section>
+        <section>
+          <div class="section-heading">
+            <h2>Recent events</h2>
+            <button class="clear-button" id="clear-events" type="button">Clear events</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Time</th><th>Event</th><th>Path</th><th>Details</th></tr></thead>
+              <tbody id="events"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+    <script>
+      const loginForm = document.querySelector("#login-form");
+      const loginError = document.querySelector("#login-error");
+      const dashboard = document.querySelector("#dashboard");
+      const stats = document.querySelector("#stats");
+      const events = document.querySelector("#events");
+      const contacts = document.querySelector("#contacts");
+      const clearContacts = document.querySelector("#clear-contacts");
+      const clearEvents = document.querySelector("#clear-events");
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (character) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;",
+        }[character]));
+      }
+
+      async function loadDashboard() {
+        const response = await fetch("/api/events");
+        if (!response.ok) return;
+        const data = await response.json();
+        dashboard.style.display = "block";
+        loginForm.style.display = "none";
+        stats.innerHTML = `<div class="stat"><strong>${escapeHtml(data.total)}</strong><br>Total events</div>` +
+          Object.entries(data.byName).map(([name, count]) =>
+            `<div class="stat"><strong>${escapeHtml(count)}</strong><br>${escapeHtml(name)}</div>`).join("");
+        events.innerHTML = data.recent.map((event) =>
+          `<tr><td>${escapeHtml(new Date(event.receivedAt).toLocaleString())}</td>` +
+          `<td>${escapeHtml(event.name)}</td><td>${escapeHtml(event.path)}</td>` +
+          `<td>${escapeHtml(JSON.stringify(event.properties))}</td></tr>`).join("");
+        contacts.innerHTML = data.contacts.map((contact) =>
+          `<tr><td>${escapeHtml(new Date(contact.receivedAt).toLocaleString())}</td>` +
+          `<td>${escapeHtml(contact.email)}</td><td>${escapeHtml(contact.message)}</td></tr>`).join("");
+      }
+
+      loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        loginError.textContent = "";
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: loginForm.username.value,
+            password: loginForm.password.value,
+          }),
+        });
+        if (!response.ok) {
+          loginError.textContent = "Invalid username or password.";
+          return;
+        }
+        loginForm.reset();
+        loadDashboard();
+      });
+
+      document.querySelector("#logout").addEventListener("click", async () => {
+        await fetch("/api/logout", { method: "POST" });
+        dashboard.style.display = "none";
+        loginForm.style.display = "block";
+      });
+
+      async function clearLog(endpoint, label) {
+        if (!window.confirm(`Clear all ${label}? This cannot be undone.`)) {
+          return;
+        }
+        const response = await fetch(endpoint, { method: "DELETE" });
+        if (!response.ok) {
+          window.alert("The log could not be cleared. Please log in again.");
+          return;
+        }
+        loadDashboard();
+      }
+
+      clearContacts.addEventListener("click", () => {
+        clearLog("/api/contacts", "contact messages");
+      });
+
+      clearEvents.addEventListener("click", () => {
+        clearLog("/api/events", "tracking events");
+      });
+
+      loadDashboard();
+    </script>
+  </body>
+</html>
