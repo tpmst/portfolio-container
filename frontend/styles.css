@@ -266,32 +266,6 @@ section {
   font-size: 12px;
 }
 
-.tech-stack-grid {
-  width: 65%;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  place-items: center;
-}
-
-.tech-stack {
-  --size: 30px;
-  width: var(--size);
-  aspect-ratio: 1;
-}
-
-.tech-stack > img {
-  display: block;
-  height: 100%;
-  object-fit: contain;
-  width: 100%;
-}
-
-.tech-stack > .typescript-icon {
-  height: 115%;
-  margin: -7.5%;
-  width: 115%;
-}
-
 /* Portfolio container */
 
 #portfolio {
@@ -524,9 +498,6 @@ footer {
   .contact-card {
     padding: 1.25rem;
   }
-  .tech-stack-grid {
-    width: 100%;
-  }
   .section-highlight {
     font-size: 3.5rem;
     top: -16px;
@@ -595,17 +566,6 @@ footer {
 
   .about-content > p {
     font-size: 16px;
-  }
-
-  .tech-stack-section {
-    align-self: flex-start;
-    margin-top: 8px;
-  }
-
-  .tech-stack {
-    --size: 40px;
-    width: var(--size);
-    aspect-ratio: 1;
   }
 
   /* portfolio */
