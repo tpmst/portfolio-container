@@ -101,7 +101,6 @@ sudo git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git \
 
 For a private repository, configure a non-interactive SSH deploy key first.
 
-
 If you want to store the project in a different path, replace
 `/mnt/main/websites/portfolio-tom` with your own project directory in all
 commands below. You must update:
@@ -275,11 +274,23 @@ Test it manually:
 sudo /mnt/main/websites/portfolio-tom/update-production.sh
 ```
 
+If your project is stored elsewhere, run:
+
+```sh
+sudo PROJECT_DIR=/your/path /your/path/update-production.sh
+```
+
 Then create a TrueNAS cron job under **System Settings > Advanced > Cron Jobs**:
 
 ```text
 Command:  /mnt/main/websites/portfolio-tom/update-production.sh
 Schedule: */15 * * * *
+```
+
+For a custom project path, use:
+
+```text
+Command:  PROJECT_DIR=/your/path /your/path/update-production.sh
 ```
 
 This checks GitHub every 15 minutes. It rebuilds only when the Git commit has
