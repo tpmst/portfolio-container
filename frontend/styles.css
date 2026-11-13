@@ -7,14 +7,16 @@
   padding: 0;
   font-family: "Roboto Mono", monospace;
   box-sizing: border-box;
+}
 
+:root {
   --primary-color: #2c3333;
   --secondary-color: #395b64;
   --accent-1: #a5c9ca;
-  --accent-2: #e7f6f2;
-
+  --accent-2: #dcebe7;
   --neutral-1: black;
-  --neutral-2: white;
+  --neutral-2: #f3f7f5;
+  --button-color: #395b64;
 }
 
 html {
@@ -26,6 +28,17 @@ body {
   line-height: 1.6;
   color: var(--primary-color);
   background-color: var(--accent-2);
+  transition: color 200ms ease, background-color 200ms ease;
+}
+
+body[data-theme="dark"] {
+  --primary-color: #c8cacc;
+  --secondary-color: #7aa9b5;
+  --accent-1: #527d86;
+  --accent-2: #18252b;
+  --neutral-1: #f5f7f8;
+  --neutral-2: #1b292e;
+  --button-color: #507680;
 }
 
 /* Navbar styles */
@@ -58,14 +71,13 @@ h1 {
 .navbar-nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-
   padding: 1rem;
   width: 90%;
 }
 
 .nav-logo {
   grid-column: 1;
+  margin-right: auto;
 }
 
 .nav-logo > h1 {
@@ -78,8 +90,8 @@ h1 {
   list-style: none;
   gap: 16px;
 
+  order: 2;
   grid-column: 2;
-  justify-self: end;
 }
 
 .mobile-nav-toggle {
@@ -100,7 +112,31 @@ h1 {
   color: var(--accent-1);
 }
 
+.theme-toggle {
+  order: 3;
+  margin-left: 16px;
+  padding: 0.45rem 0.7rem;
+  cursor: pointer;
+
+  color: var(--accent-2);
+  background-color: transparent;
+  border: 1px solid var(--accent-1);
+  font: inherit;
+  font-size: 12px;
+  transition: 200ms ease-in-out;
+}
+
+.theme-toggle:hover {
+  color: var(--primary-color);
+  background-color: var(--accent-1);
+}
+
 @media only screen and (max-width: 35em) {
+  .theme-toggle {
+    margin-left: auto;
+    margin-right: 3.5rem;
+  }
+
   .primary-nav {
     position: fixed;
     inset: 0 0 0 0;
@@ -258,6 +294,13 @@ section {
 }
 
 .about-content > h2,
+.portfolio-content > h2,
+.resume-card > h2,
+.contact-card > h2 {
+  font-size: 24px;
+}
+
+.about-content > h2,
 .about-content > h3 {
   color: var(--primary-color);
 }
@@ -398,7 +441,7 @@ section {
   padding: 1rem;
   border-radius: 8px;
   border: 1px solid var(--accent-1);
-  background-color: #fbfffe;
+  background-color: var(--neutral-2);
   transition: transform 200ms ease, box-shadow 200ms ease;
 }
 
@@ -461,8 +504,7 @@ section {
 }
 
 .project-card-links > a:hover,
-.contact-links > a:hover,
-.footer-content > a:hover {
+.contact-links > a:hover {
   color: var(--secondary-color);
   text-decoration: underline;
 }
@@ -504,10 +546,17 @@ section {
   font: inherit;
 }
 
+.contact-form input,
+.contact-form textarea {
+  color: var(--primary-color);
+  background-color: var(--neutral-2);
+  border: 1px solid var(--secondary-color);
+}
+
 .contact-form button {
   cursor: pointer;
   color: var(--accent-2);
-  background-color: var(--primary-color);
+  background-color: var(--button-color);
   border: 1px solid var(--secondary-color);
 }
 
@@ -577,12 +626,44 @@ footer {
 }
 
 .footer-content > a {
-  text-decoration: underline;
+  text-decoration: none;
+}
+
+.footer-content > a:hover {
+  color: var(--secondary-color);
+  text-decoration: none;
 }
 
 .footer-content > a:link,
 .footer-content > a:visited {
   color: var(--accent-2);
+}
+
+.back-to-top {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 1000;
+
+  width: 2.75rem;
+  height: 2.75rem;
+  cursor: pointer;
+
+  color: var(--accent-2);
+  background-color: var(--primary-color);
+  border: 1px solid var(--accent-1);
+  border-radius: 50%;
+  box-shadow: 3px 3px 0 var(--accent-1);
+
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: 200ms ease-in-out;
+}
+
+.back-to-top:hover {
+  color: var(--primary-color);
+  background-color: var(--accent-1);
+  box-shadow: 4px 4px 0 var(--secondary-color);
 }
 
 /* media queries */
@@ -642,6 +723,13 @@ footer {
     font-size: 36px;
   }
 
+  .about-content > h2,
+  .portfolio-content > h2,
+  .resume-card > h2,
+  .contact-card > h2 {
+    font-size: 32px;
+  }
+
   /* hero */
   .hero-container {
     height: 350px;
@@ -673,7 +761,7 @@ footer {
   }
 
   .about-content > h2 {
-    font-size: 32px;
+    align-self: flex-start;
   }
 
   .about-content > h3 {
@@ -694,10 +782,6 @@ footer {
   }
 
   /* portfolio */
-  .portfolio-content > h2 {
-    font-size: 32px;
-  }
-
   .project-card > h3 {
     font-size: 24px;
   }
@@ -712,10 +796,6 @@ footer {
   }
 
   /* contacts */
-  .contact-card > h2 {
-    font-size: 32px;
-  }
-
   .contact-card > p {
     font-size: 16px;
   }

@@ -4,8 +4,16 @@ import "aos/dist/aos.css";
 
 const primaryNav = document.querySelector(".primary-nav");
 const navToggle = document.querySelector(".mobile-nav-toggle");
+const backToTop = document.querySelector(".back-to-top");
+const themeToggle = document.querySelector(".theme-toggle");
 
 const navLink = document.querySelectorAll(".nav-link");
+
+const savedTheme = localStorage.getItem("theme");
+const initialTheme = savedTheme === "dark" ? "dark" : "light";
+document.body.dataset.theme = initialTheme;
+themeToggle.setAttribute("aria-pressed", initialTheme === "dark");
+themeToggle.textContent = initialTheme === "dark" ? "Light mode" : "Dark mode";
 
 function trackEvent(name, properties = {}) {
   if (!trackingConfig.enabled || !trackingConfig.endpoint) {
@@ -44,6 +52,23 @@ navToggle.addEventListener("click", () => {
     primaryNav.setAttribute("data-visible", false);
     navToggle.setAttribute("aria-expanded", false);
   }
+});
+
+backToTop.addEventListener("click", () => {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+});
+
+themeToggle.addEventListener("click", () => {
+  const isDark = document.body.dataset.theme === "dark";
+  const nextTheme = isDark ? "light" : "dark";
+
+  document.body.dataset.theme = nextTheme;
+  localStorage.setItem("theme", nextTheme);
+  themeToggle.setAttribute("aria-pressed", nextTheme === "dark");
+  themeToggle.textContent = nextTheme === "dark" ? "Light mode" : "Dark mode";
 });
 
 [...navLink].forEach((nav) => {
