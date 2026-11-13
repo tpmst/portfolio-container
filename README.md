@@ -101,6 +101,25 @@ sudo git clone https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git \
 
 For a private repository, configure a non-interactive SSH deploy key first.
 
+
+If you want to store the project in a different path, replace
+`/mnt/main/websites/portfolio-tom` with your own project directory in all
+commands below. You must update:
+
+- The clone target path
+- The `backend/.env` location path
+- Every `cd /mnt/main/websites/portfolio-tom` command
+- Every `/mnt/main/websites/portfolio-tom/update-production.sh` path
+- The cron `Command` path
+
+The Compose volume uses a relative path (`./backend/data`), so no
+`docker-compose.yml` changes are needed as long as you run Compose from your
+project directory.
+
+The updater script also has a default path. If you use a different path,
+either edit `PROJECT_DIR` in `update-production.sh` or run it with
+`PROJECT_DIR=/your/path`.
+
 ### 2. Create the production environment file
 
 Create:
