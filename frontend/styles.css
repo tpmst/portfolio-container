@@ -264,6 +264,108 @@ section {
 
 .about-content > p {
   font-size: 12px;
+  text-align: center;
+}
+
+.about-lead {
+  color: var(--secondary-color);
+  font-size: 16px !important;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.about-highlights {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, 1fr);
+  justify-items: stretch;
+  text-align: center;
+  width: 100%;
+}
+
+.about-highlight {
+  background-color: var(--accent-2);
+  border-top: 3px solid var(--secondary-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+}
+
+.about-highlight strong {
+  color: var(--secondary-color);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+}
+
+.about-highlight span {
+  font-size: 0.7rem;
+}
+
+/* Experience and education */
+
+.resume-section {
+  padding: 2rem;
+  animation: fade-in 500ms linear forwards;
+}
+
+.resume-container {
+  margin: 0 auto;
+  width: 90%;
+  z-index: 999;
+}
+
+.resume-card {
+  background-color: var(--neutral-2);
+  border: 1px solid var(--secondary-color);
+  border-radius: 4px;
+  box-shadow: 4px 4px 0px var(--accent-1);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem;
+  width: 100%;
+}
+
+.resume-card > h2 {
+  color: var(--primary-color);
+}
+
+.resume-entry {
+  border-left: 3px solid var(--accent-1);
+  padding-left: 1rem;
+}
+
+.resume-entry-heading {
+  align-items: baseline;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.resume-entry h3,
+.resume-entry h4 {
+  color: var(--secondary-color);
+}
+
+.resume-entry h4 {
+  margin-top: 0.25rem;
+}
+
+.resume-entry span {
+  color: var(--secondary-color);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.resume-entry p,
+.resume-entry li {
+  font-size: 12px;
+}
+
+.resume-entry ul {
+  margin: 0.75rem 0 0;
+  padding-left: 1.25rem;
 }
 
 /* Portfolio container */
@@ -498,6 +600,11 @@ footer {
   .contact-card {
     padding: 1.25rem;
   }
+  .resume-entry-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
   .section-highlight {
     font-size: 3.5rem;
     top: -16px;
@@ -511,7 +618,8 @@ footer {
   }
   .about-container,
   .portfolio-container,
-  .contact-container {
+  .contact-container,
+  .resume-container {
     width: 75%;
   }
 
@@ -556,6 +664,14 @@ footer {
     gap: 40px;
   }
 
+  .about-highlights {
+    max-width: 280px;
+  }
+
+  .about-content {
+    align-items: center;
+  }
+
   .about-content > h2 {
     font-size: 32px;
   }
@@ -565,6 +681,15 @@ footer {
   }
 
   .about-content > p {
+    font-size: 16px;
+  }
+
+  .resume-card {
+    padding: 1.5rem;
+  }
+
+  .resume-entry p,
+  .resume-entry li {
     font-size: 16px;
   }
 
