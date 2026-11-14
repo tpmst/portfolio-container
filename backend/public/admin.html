@@ -163,8 +163,8 @@
           <button type="button" class="add-button" data-add="experience">Add experience</button>
           <h2>Education</h2><div id="education-editor" class="editor-grid"></div>
           <button type="button" class="add-button" data-add="education">Add education</button>
-          <label for="cv-en-file">English CV (PDF)</label><input id="cv-en-file" type="file" accept="application/pdf" />
-          <label for="cv-de-file">German CV (PDF)</label><input id="cv-de-file" type="file" accept="application/pdf" />
+          <label for="cv-en-file">English CV (PDF)</label><input id="cv-en-file" type="file" accept="application/pdf" /><p id="cv-en-status" class="save-status"></p>
+          <label for="cv-de-file">German CV (PDF)</label><input id="cv-de-file" type="file" accept="application/pdf" /><p id="cv-de-status" class="save-status"></p>
           <p id="content-status" class="save-status" role="status"></p>
         </section>
         <h2>Overview</h2>
@@ -222,6 +222,7 @@
         const response = await fetch("/api/events");
         if (!response.ok) return;
         const data = await response.json();
+        await updateCvStatus();
         await loadContent();
         dashboard.style.display = "block";
         loginForm.style.display = "none";
@@ -338,6 +339,18 @@
         document.querySelector("#about-lead").value = portfolioContent.about.lead;
         document.querySelector("#about-body").value = portfolioContent.about.body;
         ["skills", "projects", "experience", "education"].forEach(renderEditor);
+      }
+
+      async function updateCvStatus() {
+        const response = await fetch("/api/cv-status");
+        if (!response.ok) {
+          document.querySelector("#cv-en-status").textContent = "Could not check English CV status.";
+          document.querySelector("#cv-de-status").textContent = "Could not check German CV status.";
+          return;
+        }
+        const status = await response.json();
+        document.querySelector("#cv-en-status").textContent = status.en ? "English CV is already uploaded." : "No English CV uploaded yet.";
+        document.querySelector("#cv-de-status").textContent = status.de ? "German CV is already uploaded." : "No German CV uploaded yet.";
       }
 
       let imageOptions = [];
@@ -503,6 +516,28 @@
         deleteUploadedAsset("#delete-icon-select", "/api/skill-icons", "SVG");
       });
 
+      ["en", "de"].forEach((language) => {
+        document.querySelector(`#cv-${language}-file`).addEventListener("change", async (event) => {
+          const file = event.target.files[0];
+          if (!file) return;
+          const status = document.querySelector("#content-status");
+          try {
+            const data = new FormData();
+            data.append("cv", file);
+            const response = await fetch(`/api/cv/${language}`, { method: "POST", body: data });
+            if (!response.ok) {
+              throw new Error((await response.json()).error || `${language.toUpperCase()} CV upload failed.`);
+            }
+            status.textContent = `${language.toUpperCase()} CV uploaded successfully.`;
+            document.querySelector(`#cv-${language}-status`).textContent = `${language.toUpperCase()} CV is already uploaded.`;
+          } catch (error) {
+            status.textContent = error.message;
+          } finally {
+            event.target.value = "";
+          }
+        });
+      });
+
       document.querySelector("#save-content").addEventListener("click", async () => {
         const status = document.querySelector("#content-status");
         status.textContent = "Saving...";
@@ -511,14 +546,6 @@
           about: { lead: document.querySelector("#about-lead").value.trim(), body: document.querySelector("#about-body").value.trim() },
           skills: readEditor("skills"), projects: readEditor("projects"), experience: readEditor("experience"), education: readEditor("education"),
         };
-        for (const [language, selector] of [["en", "#cv-en-file"], ["de", "#cv-de-file"]]) {
-          const cv = document.querySelector(selector).files[0];
-          if (!cv) continue;
-          const data = new FormData();
-          data.append("cv", cv);
-          const cvResponse = await fetch(`/api/cv/${language}`, { method: "POST", body: data });
-          if (!cvResponse.ok) throw new Error(`${language.toUpperCase()} CV upload failed.`);
-        }
         const response = await fetch("/api/content", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
         status.textContent = response.ok ? "Content saved successfully." : (await response.json()).error || "Could not save content.";
         if (response.ok) {

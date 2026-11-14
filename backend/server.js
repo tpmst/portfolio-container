@@ -16,8 +16,8 @@ const eventsFile = path.join(dataDir, "events.jsonl");
 const contactsFile = path.join(dataDir, "contacts.jsonl");
 const contentFile = path.join(dataDir, "content.json");
 const cvFiles = {
-  en: path.join(dataDir, "cv-en.pdf"),
-  de: path.join(dataDir, "cv-de.pdf"),
+  en: path.join(uploadsDir, "cv-en.pdf"),
+  de: path.join(uploadsDir, "cv-de.pdf"),
 };
 const adminFile = path.join(__dirname, "public", "admin.html");
 const port = Number(process.env.PORT || 30073);
@@ -216,6 +216,11 @@ function deleteManagedFile(filePath, locations, extensionPattern) {
     throw new Error("The selected file does not exist.");
   }
   fs.unlinkSync(file);
+}
+
+function existingCvFile(language) {
+  const legacyFile = path.join(dataDir, `cv-${language}.pdf`);
+  return [cvFiles[language], legacyFile].find((file) => fs.existsSync(file));
 }
 
 function normalizeContent(content) {
@@ -453,6 +458,18 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/api/cv-status") {
+      if (!authenticated(request)) {
+        jsonResponse(response, 401, { error: "Login required." });
+        return;
+      }
+      jsonResponse(response, 200, {
+        en: Boolean(existingCvFile("en")),
+        de: Boolean(existingCvFile("de")),
+      });
+      return;
+    }
+
     if (request.method === "POST" && url.pathname.startsWith("/api/cv/")) {
       if (!authenticated(request)) {
         jsonResponse(response, 401, { error: "Login required." });
@@ -591,7 +608,8 @@ const server = http.createServer(async (request, response) => {
     if (request.method === "GET") {
       if (url.pathname === "/cv-en.pdf" || url.pathname === "/cv-de.pdf") {
         const language = url.pathname === "/cv-de.pdf" ? "de" : "en";
-        if (!fs.existsSync(cvFiles[language])) {
+        const cvFile = existingCvFile(language);
+        if (!cvFile) {
           response.writeHead(404);
           response.end("Not found");
           return;
@@ -600,7 +618,7 @@ const server = http.createServer(async (request, response) => {
           "Content-Type": "application/pdf",
           "Content-Disposition": `attachment; filename="cv-${language}.pdf"`,
         });
-        fs.createReadStream(cvFiles[language]).pipe(response);
+        fs.createReadStream(cvFile).pipe(response);
         return;
       }
       if (url.pathname.startsWith("/icons/") || url.pathname.startsWith("/assets/icons/") || url.pathname.startsWith("/skill-icons/")) {
