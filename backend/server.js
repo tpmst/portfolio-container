@@ -190,11 +190,26 @@ function listSkillIcons() {
 }
 
 function saveSkillIcon(request, body) {
+  const boundaryMatch = (request.headers["content-type"] || "").match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  if (!boundaryMatch) throw new Error("Multipart boundary is missing.");
+  const boundary = Buffer.from(`--${boundaryMatch[1] || boundaryMatch[2]}`);
+  const partStart = body.indexOf(Buffer.from("\r\n\r\n"));
+  const partEnd = body.lastIndexOf(boundary);
+  if (partStart < 0 || partEnd <= partStart) throw new Error("Uploaded file is invalid.");
+  const headers = body.subarray(0, partStart).toString("utf8");
+  const filenameMatch = headers.match(/filename="([^"]+)"|filename=([^\s;]+)/i);
+  const originalFilename = filenameMatch && (filenameMatch[1] || filenameMatch[2]);
+  const filename = originalFilename && originalFilename.replace(/\\/g, "/").split("/").pop();
+  if (!filename || filename.length > 120 || /[\u0000-\u001f\u007f]/.test(filename) || !/\.svg$/i.test(filename)) {
+    throw new Error("SVG filename is invalid.");
+  }
+  if (fs.existsSync(path.join(skillIconsDir, filename)) || fs.existsSync(path.join(iconsDir, filename))) {
+    throw new Error(`An SVG named "${filename}" already exists.`);
+  }
   const svg = extractMultipartFile(request, body).toString("utf8").trim();
   if ((!svg.startsWith("<svg") && !svg.startsWith("<?xml")) || !svg.includes("<svg") || !svg.includes("</svg>") || svg.length > 500000) {
     throw new Error("The uploaded file must be a valid SVG.");
   }
-  const filename = `${crypto.randomBytes(16).toString("hex")}.svg`;
   fs.writeFileSync(path.join(skillIconsDir, filename), svg);
   return `/skill-icons/${filename}`;
 }

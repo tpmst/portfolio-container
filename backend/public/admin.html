@@ -93,6 +93,13 @@
       .link-fields { display: none; }
       .heading-actions { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; }
       .heading-actions button { margin: 0; width: auto; }
+      .upload-actions { display: flex; gap: .5rem; }
+      .upload-actions button { margin: 0; width: auto; }
+      .upload-notice { align-items: center; background: var(--accent-dark); border: 1px solid var(--accent); border-radius: 9px; color: var(--accent); display: flex; gap: .75rem; padding: .7rem 1rem; position: fixed; right: 1.25rem; top: 1.25rem; z-index: 10; }
+      .upload-notice[hidden] { display: none; }
+      .upload-notice button { background: transparent; color: var(--accent); font-size: 1.2rem; margin: 0; padding: 0; width: auto; }
+      .upload-error { background: #4a2026; border-color: var(--danger); color: var(--danger); }
+      .upload-error button { color: var(--danger); }
       .image-field { margin-top: 1rem; }
       .image-field span { color: var(--muted); display: block; font-size: .85rem; font-weight: 600; margin-bottom: .35rem; }
       .image-field select { appearance: none; background: var(--background) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2373daca' d='m1 1 5 5 5-5'/%3E%3C/svg%3E") right .85rem center / .75rem no-repeat; border: 1px solid var(--border); border-radius: 9px; color: var(--text); cursor: pointer; font: inherit; padding: .75rem 2.5rem .75rem .85rem; width: 100%; }
@@ -132,15 +139,19 @@
       </form>
 
       <section id="dashboard">
+        <div id="upload-notice" class="upload-notice" role="status" hidden><span id="upload-notice-text"></span><button id="close-upload-notice" type="button" aria-label="Close upload message">&times;</button></div>
+        <div id="upload-error" class="upload-notice upload-error" role="alert" hidden><span id="upload-error-text"></span><button id="close-upload-error" type="button" aria-label="Close upload error">&times;</button></div>
         <button id="logout" type="button">Log out</button>
         <section id="content-editor">
           <div class="section-heading">
             <div><h2>Portfolio content</h2><p class="subtitle">Edit the public About, Projects, Experience, and Education sections.</p></div>
             <div class="heading-actions">
-              <button id="upload-image" type="button" class="add-button">Upload image</button>
+              <div class="upload-actions">
+                <button id="upload-image" type="button" class="add-button">Upload image</button>
+                <button id="upload-skill-icon" type="button" class="add-button">Upload skill SVG</button>
+              </div>
               <input id="upload-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden />
               <button id="preview-content" type="button" class="add-button">Preview</button>
-              <button id="upload-skill-icon" type="button" class="add-button">Upload skill SVG</button>
               <input id="upload-skill-icon-file" type="file" accept="image/svg+xml,.svg" hidden />
               <button id="save-content" type="button" class="clear-button">Save changes</button>
             </div>
@@ -217,6 +228,24 @@
           "'": "&#039;",
         }[character]));
       }
+
+      function showUploadNotice(message) {
+        document.querySelector("#upload-notice-text").textContent = message;
+        document.querySelector("#upload-notice").hidden = false;
+      }
+
+      function showUploadError(message) {
+        document.querySelector("#upload-error-text").textContent = message;
+        document.querySelector("#upload-error").hidden = false;
+      }
+
+      document.querySelector("#close-upload-notice").addEventListener("click", () => {
+        document.querySelector("#upload-notice").hidden = true;
+      });
+
+      document.querySelector("#close-upload-error").addEventListener("click", () => {
+        document.querySelector("#upload-error").hidden = true;
+      });
 
       async function loadDashboard() {
         const response = await fetch("/api/events");
@@ -445,8 +474,10 @@
           renderFileManagement();
           renderEditor("skills");
           status.textContent = "Skill icon uploaded. Select it on a skill and save changes.";
+          showUploadNotice(`Skill SVG "${file.name}" has been uploaded.`);
         } catch (error) {
           status.textContent = error.message;
+          showUploadError(`Skill SVG upload failed: ${error.message}`);
         } finally {
           event.target.value = "";
         }
@@ -474,8 +505,10 @@
           imageSelect.append(new Option(uploaded.path.split("/").pop(), uploaded.path));
           imageSelect.value = uploaded.path;
           status.textContent = "Image uploaded. Save changes to publish it.";
+          showUploadNotice(`Image "${file.name}" has been uploaded.`);
         } catch (error) {
           status.textContent = error.message;
+          showUploadError(`Image upload failed: ${error.message}`);
         } finally {
           event.target.value = "";
         }
