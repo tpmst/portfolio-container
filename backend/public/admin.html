@@ -311,7 +311,7 @@
         imageSelect.replaceChildren(new Option("Select an image", ""));
         iconSelect.replaceChildren(new Option("Select an SVG", ""));
         imageOptions
-          .filter((image) => image.startsWith("/uploads/") || image.startsWith("./assets/images/"))
+          .filter((image) => image.startsWith("/uploads/") || image.startsWith("/images/"))
           .forEach((image) => imageSelect.add(new Option(image.split("/").pop(), image)));
         skillIconOptions.forEach((icon) => iconSelect.add(new Option(icon.split("/").pop(), icon)));
       }
@@ -378,7 +378,7 @@
             values.links = [...card.querySelectorAll("[data-link]:checked")].map((checkbox) => {
               const key = checkbox.dataset.link;
               const label = key === "github" ? "GitHub" : "Live demo";
-              const icon = key === "github" ? "./assets/icons/github-icon.svg" : "./assets/icons/live-demo.svg";
+              const icon = key === "github" ? "/icons/github-icon.svg" : "/icons/live-demo.svg";
               return { label, url: card.querySelector(`[data-link-url='${key}']`).value.trim(), icon };
             });
             values.technologies = values.technologies.split(",").map((tag) => tag.trim()).filter(Boolean);

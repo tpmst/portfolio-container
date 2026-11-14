@@ -2,7 +2,7 @@
 
 A responsive and minimalistic portfolio template that anyone can use 💞.
 
-<img src='./assets/images/outlines-preview.png' alt='outlines-preview' />
+<img src='../backend/data/images/outlines-preview.png' alt='outlines-preview' />
 
 ## Features
 
@@ -56,8 +56,8 @@ npm install
 npm run build
 ```
 
-For development, run `npm run dev` in `frontend`. Its `/api` requests are
-proxied to the backend at `http://localhost:30073`.
+For development, run `npm run dev` in `frontend`. Its API and uploaded asset
+requests are proxied to the backend at `http://localhost:30073`.
 
 The `backend` folder contains a Node.js server with a login-protected dashboard.
 It stores events locally in `backend/data/events.jsonl`.

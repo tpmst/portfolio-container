@@ -9,6 +9,10 @@ backend/.env.*
 # Private runtime data
 backend/data/*
 !backend/data/.gitkeep
+!backend/data/images/
+!backend/data/images/*
+!backend/data/icons/
+!backend/data/icons/*
 .update-lock
 
 # Node/Vite dependencies and build output

@@ -8,8 +8,9 @@ require("dotenv").config({ path: path.join(__dirname, ".env") });
 const rootDir = path.resolve(__dirname, "..", "frontend", "dist");
 const dataDir = path.join(__dirname, "data");
 const uploadsDir = path.join(dataDir, "uploads");
+const imagesDir = path.join(dataDir, "images");
 const skillIconsDir = path.join(dataDir, "skill-icons");
-const sourceImagesDir = path.resolve(__dirname, "..", "frontend", "assets", "images");
+const iconsDir = path.join(dataDir, "icons");
 const builtAssetsDir = path.join(rootDir, "assets");
 const eventsFile = path.join(dataDir, "events.jsonl");
 const contactsFile = path.join(dataDir, "contacts.jsonl");
@@ -40,6 +41,8 @@ if (!adminUsername || !adminPassword) {
 
 fs.mkdirSync(dataDir, { recursive: true });
 fs.mkdirSync(uploadsDir, { recursive: true });
+fs.mkdirSync(imagesDir, { recursive: true });
+fs.mkdirSync(iconsDir, { recursive: true });
 fs.mkdirSync(skillIconsDir, { recursive: true });
 
 function jsonResponse(response, status, body) {
@@ -165,7 +168,7 @@ function extractMultipartFile(request, body) {
 function listImages() {
   const images = [];
   const imagePattern = /\.(gif|jpe?g|png|webp)$/i;
-  for (const [directory, prefix] of [[uploadsDir, "/uploads/"], [sourceImagesDir, "./assets/images/"], [builtAssetsDir, "/assets/"]]) {
+  for (const [directory, prefix] of [[uploadsDir, "/uploads/"], [imagesDir, "/images/"], [builtAssetsDir, "/assets/"]]) {
     if (!fs.existsSync(directory)) continue;
     for (const filename of fs.readdirSync(directory)) {
       if (imagePattern.test(filename)) images.push(`${prefix}${filename}`);
@@ -177,7 +180,7 @@ function listImages() {
 
 function listSkillIcons() {
   const icons = [];
-  for (const [directory, prefix] of [[path.resolve(__dirname, "..", "frontend", "assets", "icons"), "./assets/icons/"], [skillIconsDir, "/skill-icons/"]]) {
+  for (const [directory, prefix] of [[iconsDir, "/icons/"], [skillIconsDir, "/skill-icons/"]]) {
     if (!fs.existsSync(directory)) continue;
     for (const filename of fs.readdirSync(directory)) {
       if (/\.svg$/i.test(filename)) icons.push(`${prefix}${filename}`);
@@ -216,11 +219,17 @@ function deleteManagedFile(filePath, locations, extensionPattern) {
 }
 
 function normalizeContent(content) {
+  const normalizeAssetPath = (assetPath) => {
+    if (typeof assetPath !== "string") return assetPath;
+    return assetPath.replace(/^\.\/assets\/images\//, "/images/")
+      .replace(/^\.\/assets\/icons\//, "/icons/");
+  };
   return {
     ...content,
-    skills: Array.isArray(content.skills) ? content.skills : [],
+    skills: Array.isArray(content.skills) ? content.skills.map((skill) => ({ ...skill, icon: normalizeAssetPath(skill.icon) })) : [],
     projects: (content.projects || []).map((project) => ({
       ...project,
+      image: normalizeAssetPath(project.image),
       technologies: Array.isArray(project.technologies) ? project.technologies : [],
       status: ["completed", "in-progress", "archived"].includes(project.status) ? project.status : "completed",
     })),
@@ -488,7 +497,7 @@ const server = http.createServer(async (request, response) => {
         url.searchParams.get("path"),
         [
           { directory: uploadsDir, prefix: "/uploads/" },
-          { directory: sourceImagesDir, prefix: "./assets/images/" },
+          { directory: imagesDir, prefix: "/images/" },
         ],
         /\.(gif|jpe?g|png|webp)$/i
       );
@@ -505,7 +514,7 @@ const server = http.createServer(async (request, response) => {
         url.searchParams.get("path"),
         [
           { directory: skillIconsDir, prefix: "/skill-icons/" },
-          { directory: path.resolve(__dirname, "..", "frontend", "assets", "icons"), prefix: "./assets/icons/" },
+          { directory: iconsDir, prefix: "/icons/" },
         ],
         /\.svg$/i
       );
@@ -594,9 +603,10 @@ const server = http.createServer(async (request, response) => {
         fs.createReadStream(cvFiles[language]).pipe(response);
         return;
       }
-      if (url.pathname.startsWith("/skill-icons/")) {
+      if (url.pathname.startsWith("/icons/") || url.pathname.startsWith("/skill-icons/")) {
         const filename = path.basename(url.pathname);
-        const iconFile = path.join(skillIconsDir, filename);
+        const iconDirectory = url.pathname.startsWith("/icons/") ? iconsDir : skillIconsDir;
+        const iconFile = path.join(iconDirectory, filename);
         if (!fs.existsSync(iconFile)) {
           response.writeHead(404);
           response.end("Not found");
@@ -606,9 +616,10 @@ const server = http.createServer(async (request, response) => {
         fs.createReadStream(iconFile).pipe(response);
         return;
       }
-      if (url.pathname.startsWith("/uploads/")) {
+      if (url.pathname.startsWith("/images/") || url.pathname.startsWith("/uploads/")) {
         const filename = path.basename(url.pathname);
-        const uploadedFile = path.join(uploadsDir, filename);
+        const imageDirectory = url.pathname.startsWith("/images/") ? imagesDir : uploadsDir;
+        const uploadedFile = path.join(imageDirectory, filename);
         if (!fs.existsSync(uploadedFile)) {
           response.writeHead(404);
           response.end("Not found");
