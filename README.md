@@ -13,7 +13,7 @@ dashboard.
 - Login-protected `/admin` dashboard
 - Admin-managed About, Skills, Projects, Experience, and Education sections
 - Project technologies, statuses, GitHub links, Live Demo links, and images
-- Skill icon selection and SVG uploads
+- Skill icon selection and SVG uploads [`Find SVGs`](https://thesvg.org/)
 - Image and SVG asset selection, upload, and deletion
 - English and German CV uploads and downloads
 - Responsive Skills grid and project detail dialogs
