@@ -56,7 +56,7 @@ function renderContent(content) {
     const tags = document.createElement("div");
     tags.className = "technology-tags";
     project.technologies.forEach((technology) => tags.append(textElement("span", technology)));
-    card.append(image, textElement("h3", project.title), status, textElement("h5", "Project description"), textElement("p", project.description), tags);
+    card.append(image, textElement("h3", project.title), status, textElement("p", project.description), tags);
     const links = document.createElement("div");
     links.className = "project-card-links";
     project.links.forEach((link) => {
