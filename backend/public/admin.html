@@ -611,13 +611,21 @@
           skills: readEditor("skills"), projects: readEditor("projects"), experience: readEditor("experience"), education: readEditor("education"),
         };
         const response = await fetch("/api/content", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-        status.textContent = response.ok ? "Content saved successfully." : (await response.json()).error || "Could not save content.";
+        if (response.ok) {
+          status.textContent = "Content saved successfully.";
+          showUploadNotice("Changes saved successfully.");
+        } else {
+          const error = (await response.json()).error || "Could not save content.";
+          status.textContent = error;
+          showUploadError(error);
+        }
         if (response.ok) {
           portfolioContent = payload;
           localStorage.removeItem("portfolio-preview-draft");
         }
         } catch (error) {
           status.textContent = error.message;
+          showUploadError(`Could not save changes: ${error.message}`);
         }
       });
 
