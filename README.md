@@ -1,7 +1,8 @@
 # Portfolio
 
-A Vite portfolio frontend with a Node.js backend for first-party analytics,
-contact messages, and a protected admin dashboard.
+A Vite portfolio frontend with a Node.js backend for dynamic portfolio content,
+first-party analytics, contact messages, file uploads, and a protected admin
+dashboard.
 
 ## Features
 
@@ -10,8 +11,14 @@ contact messages, and a protected admin dashboard.
 - First-party page-view and link-click tracking
 - Contact form with locally stored messages
 - Login-protected `/admin` dashboard
+- Admin-managed About, Skills, Projects, Experience, and Education sections
+- Project technologies, statuses, GitHub links, Live Demo links, and images
+- Skill icon selection and SVG uploads
+- Image and SVG asset selection, upload, and deletion
+- English and German CV uploads and downloads
+- Responsive Skills grid and project detail dialogs
 - Separate buttons to clear tracking events or contact messages
-- Persistent runtime data under `backend/data`
+- Persistent content and assets under `backend/data`
 
 ## Project structure
 
@@ -20,7 +27,12 @@ frontend/                 Vite source code
 frontend/dist/            Generated production build (ignored by Git)
 backend/server.js         API, admin login, dashboard, and static server
 backend/public/admin.html Admin dashboard
-backend/data/             Runtime data (ignored by Git)
+backend/data/content.json Portfolio content
+backend/data/images/     Managed project images
+backend/data/icons/      Built-in portfolio icons
+backend/data/skill-icons Uploaded skill SVGs
+backend/data/uploads/    Uploaded project images
+backend/data/cv-*.pdf    Uploaded English and German CVs
 backend/.env              Production secrets (ignored by Git)
 Dockerfile                Multi-stage production image
 docker-compose.yml        Production container configuration
@@ -56,7 +68,8 @@ Open the development frontend at:
 http://localhost:30074
 ```
 
-The Vite API proxy forwards requests to the backend on port `30073`.
+The Vite proxy forwards API, image, icon, upload, and CV requests to the
+backend on port `30073`.
 
 ## Production Docker deployment
 
@@ -73,6 +86,11 @@ The production service uses port `30073`:
 http://localhost:30073/
 http://localhost:30073/admin
 ```
+
+The backend serves the frontend and all managed assets from the same origin.
+Asset routes include `/images/...`, `/uploads/...`, `/icons/...`, and
+`/skill-icons/...`. The Docker Compose configuration explicitly sets the
+container port to `30073` and persists `backend/data` through a volume.
 
 ## TrueNAS deployment
 
@@ -114,6 +132,10 @@ commands below. You must update:
 The Compose volume uses a relative path (`./backend/data`), so no
 `docker-compose.yml` changes are needed as long as you run Compose from your
 project directory.
+
+The mounted data directory contains the portfolio content, uploaded images,
+icons, CV files, analytics events, and contact messages. Back it up before
+rebuilding or moving the deployment.
 
 The updater script also has a default path. If you use a different path,
 either edit `PROJECT_DIR` in `update-production.sh` or run it with
@@ -213,6 +235,13 @@ The Compose file mounts:
 Back up this directory. It contains:
 
 ```text
+content.json
+images/
+icons/
+skill-icons/
+uploads/
+cv-en.pdf
+cv-de.pdf
 contacts.jsonl
 events.jsonl
 ```
@@ -334,7 +363,8 @@ into the Linux image.
 
 - Use a new strong admin password.
 - Keep `backend/.env` private.
-- Keep `backend/data` private.
+- Keep uploaded CVs, images, SVGs, analytics events, and contact messages
+  private unless they are intentionally published through the application.
 - Use HTTPS for public access.
 - Do not expose the Docker socket or change its permissions to `666`.
 - Back up the data directory before clearing logs or updating the container.

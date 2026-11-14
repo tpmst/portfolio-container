@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    environment:
+      PORT: 30073
     ports:
       - "30073:30073"
     volumes:

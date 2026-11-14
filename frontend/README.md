@@ -1,20 +1,15 @@
-# Outlines Portfolio Template
+# Portfolio frontend
 
-A responsive and minimalistic portfolio template that anyone can use 💞.
-
-<img src='../backend/data/images/outlines-preview.png' alt='outlines-preview' />
+A responsive Vite frontend for the portfolio. In production it is built into
+`frontend/dist` and served by the Node.js backend.
 
 ## Features
 
-✅ Fast
-
-✅ FREE
-
-✅ Mobile Responsive
-
-✅ SEO Friendly
-
-✅ Compatible with any web server
+- Dynamic About, Skills, Projects, Experience, and Education content
+- Responsive Skills grid and project detail dialogs
+- English and German CV download links
+- Backend-served images and icons
+- Vite development server with backend proxying
 
 ## Analytics
 
@@ -56,11 +51,11 @@ npm install
 npm run build
 ```
 
-For development, run `npm run dev` in `frontend`. Its API and uploaded asset
-requests are proxied to the backend at `http://localhost:30073`.
+For development, run `npm run dev` in `frontend`. Its API, image, icon, upload,
+and CV requests are proxied to the backend at `http://localhost:30073`.
 
 The `backend` folder contains a Node.js server with a login-protected dashboard.
-It stores events locally in `backend/data/events.jsonl`.
+It stores editable content and persistent assets in `backend/data`.
 
 1. Copy `backend/.env.example` to `backend/.env` and set a strong password.
 2. Keep the credentials in `backend/.env`; the backend loads this file at
@@ -75,9 +70,24 @@ It stores events locally in `backend/data/events.jsonl`.
    `http://localhost:30073/admin` for the tracking login and contact messages.
 
 The Vite development server runs on `http://localhost:30074`; use that URL
-while developing. In the production Docker deployment, the backend serves the
-built frontend on port `30073`, so there is no separate production frontend
-port.
+while developing. In production, the backend serves the built frontend and
+assets on port `30073`, so there is no separate production frontend port.
+
+### Backend asset routes
+
+The frontend receives asset paths from the content API. The backend serves:
+
+```text
+/images/<filename>       Managed project images
+/uploads/<filename>      Uploaded project images
+/icons/<filename>        Built-in portfolio icons
+/skill-icons/<filename>  Uploaded skill SVGs
+/cv-en.pdf               English CV download
+/cv-de.pdf               German CV download
+```
+
+Use the admin panel at `/admin` to edit portfolio content, upload or select
+images and SVGs, delete managed assets, and upload the two CV versions.
 
 For Windows PowerShell, set the credentials before starting if you are not
 using `backend/.env`:
@@ -89,17 +99,13 @@ node .\server.js
 ```
 
 The included server keeps sessions in memory, so all users are logged out when
-the server restarts. Deploy it behind HTTPS and do not commit real passwords or
-the generated `backend/data/events.jsonl` or `backend/data/contacts.jsonl` files.
+the server restarts. Deploy it behind HTTPS and do not commit real passwords
+or private runtime files such as CVs, uploads, analytics events, and contact
+messages.
 
-## How to use
+## Production
 
-1. Close or manually download the code.
-2. Open the `index.html` file in your browser.
-3. If everything looks good, upload it to your server.
-
-## I am not a web developer, how do I setup my portfolio website?
-
-> Need help with setting up your portfolio website?
-
-Contact us at https://ossph.org
+Use the repository root `Dockerfile` and `docker-compose.yml` for production.
+The multi-stage Docker build creates the Vite bundle, then runs the backend on
+port `30073`. The Compose volume keeps `backend/data` persistent across
+container rebuilds.

@@ -9,6 +9,8 @@ export default defineConfig({
       "/uploads": "http://localhost:30073",
       "/icons": "http://localhost:30073",
       "/skill-icons": "http://localhost:30073",
+      "/cv-en.pdf": "http://localhost:30073",
+      "/cv-de.pdf": "http://localhost:30073",
     },
   },
   build: {
