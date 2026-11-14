@@ -247,6 +247,10 @@ function normalizeContent(content) {
   return {
     ...content,
     skills: Array.isArray(content.skills) ? content.skills.map((skill) => ({ ...skill, icon: normalizeAssetPath(skill.icon) })) : [],
+    experience: Array.isArray(content.experience) ? content.experience.map((item) => ({
+      ...item,
+      details: Array.isArray(item.details) ? item.details : [],
+    })) : [],
     projects: (content.projects || []).map((project) => ({
       ...project,
       image: normalizeAssetPath(project.image),

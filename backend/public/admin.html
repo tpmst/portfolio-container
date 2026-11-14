@@ -85,6 +85,7 @@
       textarea { background: var(--background); border: 1px solid var(--border); border-radius: 9px; color: var(--text); font: inherit; min-height: 90px; padding: .75rem .85rem; resize: vertical; width: 100%; }
       .editor-item h3 { margin: 0 0 .5rem; }
       .editor-item button { display: inline-block; margin: .75rem .5rem 0 0; width: auto; }
+      .order-button { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
       .remove-button { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
       .add-button { background: var(--surface); border: 1px solid var(--accent); color: var(--accent); }
       .save-status { color: var(--accent); min-height: 1.6em; }
@@ -324,8 +325,13 @@
           } else {
             card.append(field("Title", item.title, "title"), field("Period", item.period, "period"), field("Organization", item.organization, "organization"));
             if (section === "experience") {
-            card.append(field("Details (one per line)", item.details.join("\n"), "details", true));
-            } else card.append(field("Description", item.description, "description", true));
+              card.append(field("Details (one per line)", item.details.join("\n"), "details", true));
+            } else {
+              card.append(field("Description", item.description, "description", true));
+            }
+            if (section === "experience" || section === "education") {
+              appendOrderControls(card, section, index);
+            }
           }
           const remove = document.createElement("button");
           remove.type = "button"; remove.className = "remove-button"; remove.textContent = "Remove";
@@ -333,6 +339,31 @@
           card.append(remove);
           return card;
         }));
+      }
+
+      function appendOrderControls(card, section, index) {
+        const moveUp = document.createElement("button");
+        moveUp.type = "button";
+        moveUp.className = "order-button";
+        moveUp.textContent = "Move up";
+        moveUp.disabled = index === 0;
+        moveUp.addEventListener("click", () => moveItem(section, index, -1));
+        const moveDown = document.createElement("button");
+        moveDown.type = "button";
+        moveDown.className = "order-button";
+        moveDown.textContent = "Move down";
+        moveDown.disabled = index === portfolioContent[section].length - 1;
+        moveDown.addEventListener("click", () => moveItem(section, index, 1));
+        card.append(moveUp, moveDown);
+      }
+
+      function moveItem(section, index, direction) {
+        portfolioContent[section] = readEditor(section);
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= portfolioContent[section].length) return;
+        [portfolioContent[section][index], portfolioContent[section][targetIndex]] =
+          [portfolioContent[section][targetIndex], portfolioContent[section][index]];
+        renderEditor(section);
       }
 
       function renderFileManagement() {
