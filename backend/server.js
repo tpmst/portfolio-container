@@ -7,8 +7,17 @@ require("dotenv").config({ path: path.join(__dirname, ".env") });
 
 const rootDir = path.resolve(__dirname, "..", "frontend", "dist");
 const dataDir = path.join(__dirname, "data");
+const uploadsDir = path.join(dataDir, "uploads");
+const skillIconsDir = path.join(dataDir, "skill-icons");
+const sourceImagesDir = path.resolve(__dirname, "..", "frontend", "assets", "images");
+const builtAssetsDir = path.join(rootDir, "assets");
 const eventsFile = path.join(dataDir, "events.jsonl");
 const contactsFile = path.join(dataDir, "contacts.jsonl");
+const contentFile = path.join(dataDir, "content.json");
+const cvFiles = {
+  en: path.join(dataDir, "cv-en.pdf"),
+  de: path.join(dataDir, "cv-de.pdf"),
+};
 const adminFile = path.join(__dirname, "public", "admin.html");
 const port = Number(process.env.PORT || 30073);
 const sessionTtl = Number(process.env.SESSION_TTL_MS || 86400000);
@@ -30,6 +39,8 @@ if (!adminUsername || !adminPassword) {
 }
 
 fs.mkdirSync(dataDir, { recursive: true });
+fs.mkdirSync(uploadsDir, { recursive: true });
+fs.mkdirSync(skillIconsDir, { recursive: true });
 
 function jsonResponse(response, status, body) {
   response.writeHead(status, {
@@ -97,6 +108,125 @@ function readBody(request) {
   });
 }
 
+function readUpload(request) {
+  const maxUploadBytes = 8 * 1024 * 1024;
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    request.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > maxUploadBytes) {
+        reject(new Error("Uploaded file is too large."));
+        request.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    request.on("end", () => resolve(Buffer.concat(chunks)));
+    request.on("error", reject);
+  });
+}
+
+function saveUploadedImage(request, body) {
+  const boundaryMatch = (request.headers["content-type"] || "").match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  if (!boundaryMatch) {
+    throw new Error("Multipart boundary is missing.");
+  }
+
+  const boundary = Buffer.from(`--${boundaryMatch[1] || boundaryMatch[2]}`);
+  const partStart = body.indexOf(Buffer.from("\r\n\r\n"));
+  const partEnd = body.lastIndexOf(boundary);
+  if (partStart < 0 || partEnd <= partStart) {
+    throw new Error("Uploaded file is invalid.");
+  }
+  const headers = body.subarray(0, partStart).toString("utf8");
+  const mimeMatch = headers.match(/Content-Type:\s*([^\r\n]+)/i);
+  const mime = mimeMatch && mimeMatch[1].trim().toLowerCase();
+  const extensions = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif" };
+  if (!extensions[mime]) {
+    throw new Error("Only JPG, PNG, WEBP, and GIF images are supported.");
+  }
+  const image = body.subarray(partStart + 4, partEnd - 2);
+  const filename = `${crypto.randomBytes(16).toString("hex")}${extensions[mime]}`;
+  fs.writeFileSync(path.join(uploadsDir, filename), image);
+  return `/uploads/${filename}`;
+}
+
+function extractMultipartFile(request, body) {
+  const boundaryMatch = (request.headers["content-type"] || "").match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  if (!boundaryMatch) throw new Error("Multipart boundary is missing.");
+  const boundary = Buffer.from(`--${boundaryMatch[1] || boundaryMatch[2]}`);
+  const partStart = body.indexOf(Buffer.from("\r\n\r\n"));
+  const partEnd = body.lastIndexOf(boundary);
+  if (partStart < 0 || partEnd <= partStart) throw new Error("Uploaded file is invalid.");
+  return body.subarray(partStart + 4, partEnd - 2);
+}
+
+function listImages() {
+  const images = [];
+  const imagePattern = /\.(gif|jpe?g|png|webp)$/i;
+  for (const [directory, prefix] of [[uploadsDir, "/uploads/"], [sourceImagesDir, "./assets/images/"], [builtAssetsDir, "/assets/"]]) {
+    if (!fs.existsSync(directory)) continue;
+    for (const filename of fs.readdirSync(directory)) {
+      if (imagePattern.test(filename)) images.push(`${prefix}${filename}`);
+    }
+
+  }
+  return [...new Set(images)].sort();
+}
+
+function listSkillIcons() {
+  const icons = [];
+  for (const [directory, prefix] of [[path.resolve(__dirname, "..", "frontend", "assets", "icons"), "./assets/icons/"], [skillIconsDir, "/skill-icons/"]]) {
+    if (!fs.existsSync(directory)) continue;
+    for (const filename of fs.readdirSync(directory)) {
+      if (/\.svg$/i.test(filename)) icons.push(`${prefix}${filename}`);
+    }
+  }
+  return [...new Set(icons)].sort();
+}
+
+function saveSkillIcon(request, body) {
+  const svg = extractMultipartFile(request, body).toString("utf8").trim();
+  if ((!svg.startsWith("<svg") && !svg.startsWith("<?xml")) || !svg.includes("<svg") || !svg.includes("</svg>") || svg.length > 500000) {
+    throw new Error("The uploaded file must be a valid SVG.");
+  }
+  const filename = `${crypto.randomBytes(16).toString("hex")}.svg`;
+  fs.writeFileSync(path.join(skillIconsDir, filename), svg);
+  return `/skill-icons/${filename}`;
+}
+
+function deleteManagedFile(filePath, locations, extensionPattern) {
+  if (typeof filePath !== "string") {
+    throw new Error("A file must be selected.");
+  }
+  const location = locations.find((candidate) => filePath.startsWith(candidate.prefix));
+  if (!location) {
+    throw new Error("The selected file is not managed by the portfolio.");
+  }
+  const relativePath = filePath.slice(location.prefix.length);
+  if (!relativePath || relativePath.includes("/") || relativePath.includes("\\") || !extensionPattern.test(relativePath)) {
+    throw new Error("The selected file type is not supported.");
+  }
+  const file = path.join(location.directory, relativePath);
+  if (!fs.existsSync(file)) {
+    throw new Error("The selected file does not exist.");
+  }
+  fs.unlinkSync(file);
+}
+
+function normalizeContent(content) {
+  return {
+    ...content,
+    skills: Array.isArray(content.skills) ? content.skills : [],
+    projects: (content.projects || []).map((project) => ({
+      ...project,
+      technologies: Array.isArray(project.technologies) ? project.technologies : [],
+      status: ["completed", "in-progress", "archived"].includes(project.status) ? project.status : "completed",
+    })),
+  };
+}
+
 function validEvent(body) {
   return (
     body &&
@@ -144,6 +274,44 @@ function loadContacts() {
     .split("\n")
     .filter(Boolean)
     .map((line) => JSON.parse(line));
+}
+
+function loadContent() {
+  if (!fs.existsSync(contentFile)) {
+    throw new Error("Portfolio content file is missing.");
+  }
+  return normalizeContent(JSON.parse(fs.readFileSync(contentFile, "utf8")));
+}
+
+function validText(value, maxLength) {
+  return typeof value === "string" && value.trim().length > 0 && value.length <= maxLength;
+}
+
+function validContent(content) {
+  if (!content || !content.about || !validText(content.about.lead, 500) || !validText(content.about.body, 5000)) {
+    return false;
+  }
+  for (const section of ["projects", "experience", "education"]) {
+    if (!Array.isArray(content[section]) || content[section].length > 100) return false;
+  }
+  if (!Array.isArray(content.skills)) return false;
+  if (!content.skills.every((skill) => validText(skill.name, 100) && validText(skill.level, 100))) return false;
+  return content.projects.every((item) =>
+    validText(item.title, 200) && validText(item.description, 5000) &&
+    validText(item.image, 500) && Array.isArray(item.technologies) &&
+    item.technologies.length <= 30 && item.technologies.every((tag) => validText(tag, 80)) &&
+    ["completed", "in-progress", "archived"].includes(item.status) && Array.isArray(item.links) &&
+    item.links.length <= 10 && item.links.every((link) =>
+      validText(link.label, 100) && validText(link.url, 1000) &&
+      validText(link.icon, 500))
+  ) && ["experience", "education"].every((section) => content[section].every((item) =>
+    validText(item.title, 200) && validText(item.period, 200) &&
+    validText(item.organization, 300) &&
+    (section === "education"
+      ? validText(item.description, 2000)
+      : Array.isArray(item.details) && item.details.length <= 50 &&
+        item.details.every((detail) => validText(detail, 1000)))
+  ));
 }
 
 function serveStatic(request, response, pathname) {
@@ -254,6 +422,7 @@ const server = http.createServer(async (request, response) => {
         jsonResponse(response, 401, { error: "Invalid username or password." });
         return;
       }
+
       const token = crypto.randomBytes(32).toString("hex");
       sessions.set(token, { expiresAt: Date.now() + sessionTtl });
       const secureCookie = secure ? "; Secure" : "";
@@ -262,6 +431,85 @@ const server = http.createServer(async (request, response) => {
         "Set-Cookie": `tracking_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${Math.floor(sessionTtl / 1000)}${secureCookie}`,
       });
       response.end(JSON.stringify({ ok: true }));
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/uploads") {
+      if (!authenticated(request)) {
+        jsonResponse(response, 401, { error: "Login required." });
+        return;
+      }
+      const imagePath = saveUploadedImage(request, await readUpload(request));
+      jsonResponse(response, 201, { path: imagePath });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname.startsWith("/api/cv/")) {
+      if (!authenticated(request)) {
+        jsonResponse(response, 401, { error: "Login required." });
+        return;
+      }
+      const language = url.pathname.endsWith("/de") ? "de" : url.pathname.endsWith("/en") ? "en" : null;
+      if (!language) {
+        jsonResponse(response, 400, { error: "CV language must be en or de." });
+        return;
+      }
+
+      const body = await readUpload(request);
+      fs.writeFileSync(cvFiles[language], extractMultipartFile(request, body));
+      jsonResponse(response, 201, { path: `/cv-${language}.pdf` });
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/skill-icons") {
+      if (!authenticated(request)) {
+        jsonResponse(response, 401, { error: "Login required." });
+        return;
+      }
+      jsonResponse(response, 200, { icons: listSkillIcons() });
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/skill-icons") {
+      if (!authenticated(request)) {
+        jsonResponse(response, 401, { error: "Login required." });
+        return;
+      }
+      jsonResponse(response, 201, { path: saveSkillIcon(request, await readUpload(request)) });
+      return;
+    }
+
+    if (request.method === "DELETE" && url.pathname === "/api/uploads") {
+      if (!authenticated(request)) {
+        jsonResponse(response, 401, { error: "Login required." });
+        return;
+      }
+      deleteManagedFile(
+        url.searchParams.get("path"),
+        [
+          { directory: uploadsDir, prefix: "/uploads/" },
+          { directory: sourceImagesDir, prefix: "./assets/images/" },
+        ],
+        /\.(gif|jpe?g|png|webp)$/i
+      );
+      jsonResponse(response, 200, { ok: true });
+      return;
+    }
+
+    if (request.method === "DELETE" && url.pathname === "/api/skill-icons") {
+      if (!authenticated(request)) {
+        jsonResponse(response, 401, { error: "Login required." });
+        return;
+      }
+      deleteManagedFile(
+        url.searchParams.get("path"),
+        [
+          { directory: skillIconsDir, prefix: "/skill-icons/" },
+          { directory: path.resolve(__dirname, "..", "frontend", "assets", "icons"), prefix: "./assets/icons/" },
+        ],
+        /\.svg$/i
+      );
+      jsonResponse(response, 200, { ok: true });
       return;
     }
 
@@ -286,6 +534,37 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/api/content") {
+      jsonResponse(response, 200, loadContent());
+      return;
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/images") {
+      if (!authenticated(request)) {
+        jsonResponse(response, 401, { error: "Login required." });
+        return;
+      }
+      jsonResponse(response, 200, { images: listImages() });
+      return;
+    }
+
+    if (request.method === "PUT" && url.pathname === "/api/content") {
+      if (!authenticated(request)) {
+        jsonResponse(response, 401, { error: "Login required." });
+        return;
+      }
+      const content = JSON.parse(await readBody(request));
+      if (!validContent(content)) {
+        jsonResponse(response, 400, { error: "Invalid portfolio content." });
+        return;
+      }
+      const temporaryFile = `${contentFile}.tmp`;
+      fs.writeFileSync(temporaryFile, `${JSON.stringify(content, null, 2)}\n`);
+      fs.renameSync(temporaryFile, contentFile);
+      jsonResponse(response, 200, { ok: true });
+      return;
+    }
+
     if (
       request.method === "DELETE" &&
       (url.pathname === "/api/events" || url.pathname === "/api/contacts")
@@ -301,6 +580,46 @@ const server = http.createServer(async (request, response) => {
     }
 
     if (request.method === "GET") {
+      if (url.pathname === "/cv-en.pdf" || url.pathname === "/cv-de.pdf") {
+        const language = url.pathname === "/cv-de.pdf" ? "de" : "en";
+        if (!fs.existsSync(cvFiles[language])) {
+          response.writeHead(404);
+          response.end("Not found");
+          return;
+        }
+        response.writeHead(200, {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="cv-${language}.pdf"`,
+        });
+        fs.createReadStream(cvFiles[language]).pipe(response);
+        return;
+      }
+      if (url.pathname.startsWith("/skill-icons/")) {
+        const filename = path.basename(url.pathname);
+        const iconFile = path.join(skillIconsDir, filename);
+        if (!fs.existsSync(iconFile)) {
+          response.writeHead(404);
+          response.end("Not found");
+          return;
+        }
+        response.writeHead(200, { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=31536000, immutable" });
+        fs.createReadStream(iconFile).pipe(response);
+        return;
+      }
+      if (url.pathname.startsWith("/uploads/")) {
+        const filename = path.basename(url.pathname);
+        const uploadedFile = path.join(uploadsDir, filename);
+        if (!fs.existsSync(uploadedFile)) {
+          response.writeHead(404);
+          response.end("Not found");
+          return;
+        }
+        const extension = path.extname(filename).toLowerCase();
+        const contentTypes = { ".gif": "image/gif", ".jpg": "image/jpeg", ".png": "image/png", ".webp": "image/webp" };
+        response.writeHead(200, { "Content-Type": contentTypes[extension] || "application/octet-stream", "Cache-Control": "public, max-age=31536000, immutable" });
+        fs.createReadStream(uploadedFile).pipe(response);
+        return;
+      }
       serveStatic(request, response, url.pathname);
       return;
     }

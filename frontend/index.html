@@ -85,18 +85,16 @@
           <div class="about-card">
             <section class="about-content">
               <h2>> About</h2>
-              <p class="about-lead">
-                I build practical software that connects people, systems, and
-                ideas.
-              </p>
-              <p>
-                My name is Tom Stiefel, I'm an IT specialist and software developer
-                currently studying at Frankfurt University of Applied
-                Sciences. My experience spans infrastructure, automation,
-                support, and full-stack development. From internal tools and network services to connected hardware
-                projects, I enjoy turning complex requirements into reliable,
-                maintainable solutions.
-              </p>
+              <div id="about-content"></div>
+              <div class="cv-downloads">
+                <a class="cv-download" href="/cv-en.pdf">Download CV (English)</a>
+                <a class="cv-download" href="/cv-de.pdf">Lebenslauf herunterladen (Deutsch)</a>
+              </div>
+            </section>
+
+            <section id="skills" class="resume-section">
+              <div class="section-highlight" data-aos="fade-up">SKILLS</div>
+              <div class="resume-container" data-aos="fade-up"><div class="resume-card"><h2>>Skills</h2><div id="skills-section-content" class="skills-list"></div></div></div>
             </section>
           </div>
         </div>
@@ -109,88 +107,7 @@
             <div class="portfolio-content">
               <h2>> Projects</h2>
 
-              <!-- input projects inside project container -->
-              <div class="project-container">
-                <section class="project-card">
-                  <img
-                    class="project-img"
-                    src="./assets/images/pellet-monitor.png"
-                    alt="project-1"
-                  />
-                  <h3>esp32-pellet-monitor</h3>
-                  <h5>Project description</h5>
-                  <p>
-                    ESP32 Arduino sketches to monitor pellet heating setups: tracks silo levels and climate via ultrasonic sensors, and bridges local ETA boiler HTTP/XML telemetry and error logs to Firebase.
-                  </p>
-
-                  <div class="project-card-links">
-                    <a href="https://github.com/tpmst/esp32-pellet-monitor">
-                      <img
-                        class="project-icons"
-                        src="./assets/icons/github-icon.svg"
-                        alt="live-demo"
-                      />
-                      Repository
-                    </a>
-                  </div>
-                </section>
-
-                <section class="project-card">
-                  <img
-                    class="project-img"
-                    src="./assets/images/pelletsense.png"
-                    alt="project-1"
-                  />
-                  <h3>eta-pellet-monitor-web-ui</h3>
-                  <h5>Project description</h5>
-                  <p>
-                    Browser-based monitoring dashboard for ETA pellet heating systems. Visualizes 30-day silo levels, room climate, and boiler status from Firebase Firestore, including automated email alerts.
-                  </p>
-
-                  <div class="project-card-links">
-                    <a href="https://pelletsense.tpmst.xyz/">
-                      <img
-                        class="project-icons"
-                        src="./assets/icons/live-demo.svg"
-                        alt="live-demo"
-                      />
-                      Live demo
-                    </a>
-                    <a href="https://github.com/tpmst/eta-pellet-monitor-web-ui">
-                      <img
-                        class="project-icons"
-                        src="./assets/icons/github-icon.svg"
-                        alt="live-demo"
-                      />
-                      Repository
-                    </a>
-                  </div>
-                </section>
-
-                <section class="project-card">
-                  <img
-                    class="project-img"
-                    src="./assets/images/it-ops-procurement-manager.png"
-                    alt="project-1"
-                  />
-                  <h3>it-ops-procurement-manager</h3>
-                  <h5>Project description</h5>
-                  <p>
-                   Full-stack IT procurement and asset management web app built with React, TypeScript, and Express. Features hardware/software requests, CSV inventory editing, license & phone tracking, SNMP printer monitoring, and template-based PDF generation.
-                  </p>
-
-                  <div class="project-card-links">
-                    <a href="https://github.com/tpmst/it-ops-procurement-manager">
-                      <img
-                        class="project-icons"
-                        src="./assets/icons/github-icon.svg"
-                        alt="live-demo"
-                      />
-                      Repository
-                    </a>
-                  </div>
-                </section>
-              </div>
+              <div id="projects-content" class="project-container"></div>
             </div>
           </div>
         </div>
@@ -202,6 +119,8 @@
           <div class="resume-card">
             <h2>>Experience</h2>
 
+            <div id="experience-content"></div>
+            <template id="experience-template">
             <article class="resume-entry">
               <div class="resume-entry-heading">
                 <h3>IT Specialist and Software Developer</h3>
@@ -216,8 +135,10 @@
                 <li>Managed the internal support ticket system and provided first-level support for employees.</li>
               </ul>
             </article>
+            </template>
 
-            <article class="resume-entry">
+            <!-- Entries are loaded from the admin-managed content. -->
+            <!--
               <div class="resume-entry-heading">
                 <h3>Trainee IT Specialist for System Integration</h3>
                 <span>September 2021 - July 2024</span>
@@ -235,6 +156,7 @@
                 <li>Developed a Windows permission concept for sensitive financial data and PowerShell recovery scripts for outage scenarios.</li>
               </ul>
             </article>
+            -->
           </div>
         </div>
       </section>
@@ -245,7 +167,8 @@
           <div class="resume-card">
             <h2>>Education</h2>
 
-            <article class="resume-entry">
+            <div id="education-content"></div>
+            <!--
               <div class="resume-entry-heading">
                 <h3>B.Sc. Student</h3>
                 <span>September 2025 - present</span>
@@ -253,18 +176,12 @@
               <h4>Frankfurt University of Applied Sciences</h4>
               <p>Current grade point average: 2.47</p>
             </article>
+            -->
 
-            <article class="resume-entry">
-              <div class="resume-entry-heading">
-                <h3>University Entrance Qualification (Fachhochschulreife)</h3>
-                <span>August 2021</span>
-              </div>
-              <h4>Einhardschule Seligenstadt</h4>
-              <p>Specialization: Mathematics and Physics</p>
-            </article>
           </div>
         </div>
       </section>
+
 
       <section id="contact">
         <h2 class="section-highlight" data-aos="fade-up">Contacts</h2>
@@ -307,6 +224,7 @@
     <button class="back-to-top" type="button" aria-label="Back to top">
       &uarr;
     </button>
+    <dialog id="project-dialog"><button class="dialog-close" type="button">Close</button><div id="project-detail"></div></dialog>
     
   </body>
 </html>

@@ -80,6 +80,28 @@
       td { color: #d7e1e6; }
       tr:last-child td { border-bottom: 0; }
       .empty { color: var(--muted); padding: 1rem 0; }
+      .editor-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+      .editor-item { background: var(--surface-raised); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; }
+      textarea { background: var(--background); border: 1px solid var(--border); border-radius: 9px; color: var(--text); font: inherit; min-height: 90px; padding: .75rem .85rem; resize: vertical; width: 100%; }
+      .editor-item h3 { margin: 0 0 .5rem; }
+      .editor-item button { display: inline-block; margin: .75rem .5rem 0 0; width: auto; }
+      .remove-button { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+      .add-button { background: var(--surface); border: 1px solid var(--accent); color: var(--accent); }
+      .save-status { color: var(--accent); min-height: 1.6em; }
+      .link-option { align-items: center; display: flex; gap: .5rem; }
+      .link-option input { width: auto; }
+      .link-fields { display: none; }
+      .heading-actions { align-items: center; display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; }
+      .heading-actions button { margin: 0; width: auto; }
+      .image-field { margin-top: 1rem; }
+      .image-field span { color: var(--muted); display: block; font-size: .85rem; font-weight: 600; margin-bottom: .35rem; }
+      .image-field select { appearance: none; background: var(--background) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2373daca' d='m1 1 5 5 5-5'/%3E%3C/svg%3E") right .85rem center / .75rem no-repeat; border: 1px solid var(--border); border-radius: 9px; color: var(--text); cursor: pointer; font: inherit; padding: .75rem 2.5rem .75rem .85rem; width: 100%; }
+      .image-field select:focus { border-color: var(--accent); outline: 2px solid rgba(115, 218, 202, .2); }
+      .file-management { align-items: end; display: grid; gap: .75rem; grid-template-columns: minmax(0, 1fr) auto; margin: 1rem 0; }
+      .file-management label { margin: 0; }
+      .file-management select { background: var(--background); border: 1px solid var(--border); border-radius: 9px; color: var(--text); font: inherit; padding: .75rem .85rem; width: 100%; }
+      .file-management button { margin: 0; width: auto; }
+      @media (max-width: 640px) { .file-management { grid-template-columns: 1fr; } }
       #dashboard { display: none; }
       @media (max-width: 640px) {
         main { padding-top: 1.25rem; }
@@ -111,9 +133,43 @@
 
       <section id="dashboard">
         <button id="logout" type="button">Log out</button>
+        <section id="content-editor">
+          <div class="section-heading">
+            <div><h2>Portfolio content</h2><p class="subtitle">Edit the public About, Projects, Experience, and Education sections.</p></div>
+            <div class="heading-actions">
+              <button id="upload-image" type="button" class="add-button">Upload image</button>
+              <input id="upload-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden />
+              <button id="preview-content" type="button" class="add-button">Preview</button>
+              <button id="upload-skill-icon" type="button" class="add-button">Upload skill SVG</button>
+              <input id="upload-skill-icon-file" type="file" accept="image/svg+xml,.svg" hidden />
+              <button id="save-content" type="button" class="clear-button">Save changes</button>
+            </div>
+          </div>
+          <div class="file-management">
+            <label>Delete image<select id="delete-image-select"><option value="">Select an image</option></select></label>
+            <button id="delete-image" type="button" class="remove-button">Delete image</button>
+            <label>Delete SVG<select id="delete-icon-select"><option value="">Select an SVG</option></select></label>
+            <button id="delete-icon" type="button" class="remove-button">Delete SVG</button>
+          </div>
+          <label for="about-lead">About lead</label>
+          <input id="about-lead" />
+          <label for="about-body">About text</label>
+          <textarea id="about-body"></textarea>
+          <h2>Skills</h2><div id="skills-editor" class="editor-grid"></div>
+          <button type="button" class="add-button" data-add="skills">Add skill</button>
+          <h2>Projects</h2><div id="projects-editor" class="editor-grid"></div>
+          <button type="button" class="add-button" data-add="projects">Add project</button>
+          <h2>Experience</h2><div id="experience-editor" class="editor-grid"></div>
+          <button type="button" class="add-button" data-add="experience">Add experience</button>
+          <h2>Education</h2><div id="education-editor" class="editor-grid"></div>
+          <button type="button" class="add-button" data-add="education">Add education</button>
+          <label for="cv-en-file">English CV (PDF)</label><input id="cv-en-file" type="file" accept="application/pdf" />
+          <label for="cv-de-file">German CV (PDF)</label><input id="cv-de-file" type="file" accept="application/pdf" />
+          <p id="content-status" class="save-status" role="status"></p>
+        </section>
         <h2>Overview</h2>
         <div id="stats" class="stats"></div>
-        <section>
+        <section id="contact-messages">
           <div class="section-heading">
             <h2>Contact messages</h2>
             <button class="clear-button" id="clear-contacts" type="button">Clear messages</button>
@@ -148,6 +204,9 @@
       const contacts = document.querySelector("#contacts");
       const clearContacts = document.querySelector("#clear-contacts");
       const clearEvents = document.querySelector("#clear-events");
+      let portfolioContent;
+
+      document.querySelector("#contact-messages").after(document.querySelector("#content-editor"));
 
       function escapeHtml(value) {
         return String(value).replace(/[&<>"']/g, (character) => ({
@@ -163,6 +222,7 @@
         const response = await fetch("/api/events");
         if (!response.ok) return;
         const data = await response.json();
+        await loadContent();
         dashboard.style.display = "block";
         loginForm.style.display = "none";
         stats.innerHTML = `<div class="stat"><strong>${escapeHtml(data.total)}</strong><br>Total events</div>` +
@@ -176,6 +236,309 @@
           `<tr><td>${escapeHtml(new Date(contact.receivedAt).toLocaleString())}</td>` +
           `<td>${escapeHtml(contact.email)}</td><td>${escapeHtml(contact.message)}</td></tr>`).join("");
       }
+
+      function field(label, value, key, multiline = false) {
+        const wrapper = document.createElement("label");
+        wrapper.textContent = label;
+        const input = document.createElement(multiline ? "textarea" : "input");
+        input.value = value || "";
+        input.dataset.key = key;
+        wrapper.append(input);
+        return wrapper;
+      }
+
+      function renderEditor(section) {
+        const container = document.querySelector(`#${section}-editor`);
+        container.replaceChildren(...portfolioContent[section].map((item, index) => {
+          const card = document.createElement("div");
+          card.className = "editor-item";
+          card.dataset.index = index;
+          card.append(document.createElement("h3"));
+          card.firstChild.textContent = `${section[0].toUpperCase()}${section.slice(1)} ${index + 1}`;
+          if (section === "projects") {
+            card.append(field("Title", item.title, "title"), field("Description", item.description, "description", true));
+            const imageLabel = document.createElement("label");
+            imageLabel.className = "image-field";
+            const imageLabelText = document.createElement("span");
+            imageLabelText.textContent = "Image";
+            const imageSelect = document.createElement("select");
+            imageSelect.dataset.key = "image";
+            imageSelect.innerHTML = imageOptions.map((image) => {
+              const filename = image.split("/").pop();
+              return `<option value="${escapeHtml(image)}">${escapeHtml(filename)}</option>`;
+            }).join("");
+            imageSelect.value = item.image;
+            imageSelect.addEventListener("change", () => { activeProjectIndex = index; });
+            imageLabel.append(imageLabelText, imageSelect);
+            card.append(imageLabel);
+            const github = linkByLabel(item.links, "github");
+            const liveDemo = linkByLabel(item.links, "live demo");
+            card.append(linkControl("GitHub", github, "github"), linkControl("Live demo", liveDemo, "live-demo"));
+            card.append(field("Technologies (comma separated)", item.technologies.join(", "), "technologies"));
+            card.append(field("Status", item.status, "status"));
+          } else if (section === "skills") {
+            card.append(field("Name", item.name, "name"), field("Level", item.level, "level"));
+            const iconLabel = document.createElement("label");
+            iconLabel.className = "image-field";
+            const iconLabelText = document.createElement("span");
+            iconLabelText.textContent = "Icon";
+            const iconSelect = document.createElement("select");
+            iconSelect.dataset.key = "icon";
+            iconSelect.innerHTML = `<option value="">No icon</option>` + skillIconOptions.map((icon) => {
+              const filename = icon.split("/").pop();
+              return `<option value="${escapeHtml(icon)}">${escapeHtml(filename)}</option>`;
+            }).join("");
+            iconSelect.value = item.icon || "";
+            iconLabel.append(iconLabelText, iconSelect);
+            card.append(iconLabel);
+          } else {
+            card.append(field("Title", item.title, "title"), field("Period", item.period, "period"), field("Organization", item.organization, "organization"));
+            if (section === "experience") {
+            card.append(field("Details (one per line)", item.details.join("\n"), "details", true));
+            } else card.append(field("Description", item.description, "description", true));
+          }
+          const remove = document.createElement("button");
+          remove.type = "button"; remove.className = "remove-button"; remove.textContent = "Remove";
+          remove.addEventListener("click", () => { portfolioContent[section].splice(index, 1); renderEditor(section); });
+          card.append(remove);
+          return card;
+        }));
+      }
+
+      function renderFileManagement() {
+        const imageSelect = document.querySelector("#delete-image-select");
+        const iconSelect = document.querySelector("#delete-icon-select");
+        imageSelect.replaceChildren(new Option("Select an image", ""));
+        iconSelect.replaceChildren(new Option("Select an SVG", ""));
+        imageOptions
+          .filter((image) => image.startsWith("/uploads/") || image.startsWith("./assets/images/"))
+          .forEach((image) => imageSelect.add(new Option(image.split("/").pop(), image)));
+        skillIconOptions.forEach((icon) => iconSelect.add(new Option(icon.split("/").pop(), icon)));
+      }
+
+      async function loadContent() {
+        const response = await fetch("/api/content");
+        if (!response.ok) {
+          throw new Error("Portfolio content could not be loaded.");
+        }
+        portfolioContent = await response.json();
+        const skillIconsResponse = await fetch("/api/skill-icons");
+        skillIconOptions = skillIconsResponse.ok ? (await skillIconsResponse.json()).icons : [];
+        const imagesResponse = await fetch("/api/images");
+        imageOptions = imagesResponse.ok ? (await imagesResponse.json()).images : [];
+        imageOptions = [...new Set([
+          ...imageOptions,
+          ...portfolioContent.projects.map((project) => project.image).filter(Boolean),
+        ])].sort();
+        skillIconOptions = [...new Set([
+          ...skillIconOptions,
+          ...portfolioContent.skills.map((skill) => skill.icon).filter(Boolean),
+        ])].sort();
+        renderFileManagement();
+        document.querySelector("#about-lead").value = portfolioContent.about.lead;
+        document.querySelector("#about-body").value = portfolioContent.about.body;
+        ["skills", "projects", "experience", "education"].forEach(renderEditor);
+      }
+
+      let imageOptions = [];
+      let skillIconOptions = [];
+      let activeProjectIndex = 0;
+      function linkByLabel(links, label) {
+        return links.find((link) => {
+          const linkLabel = link.label.toLowerCase();
+          const linkUrl = link.url.toLowerCase();
+          if (label === "github") {
+            return linkLabel.includes("github") || linkLabel === "repository" || linkUrl.includes("github.com");
+          }
+          return linkLabel.includes("live") || linkUrl.includes("demo");
+        }) || {};
+      }
+      function linkControl(label, link, key) {
+        const wrapper = document.createElement("div");
+        const checkboxLabel = document.createElement("label");
+        checkboxLabel.className = "link-option";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox"; checkbox.dataset.link = key; checkbox.checked = Boolean(link.url);
+        checkboxLabel.append(checkbox, document.createTextNode(` Add ${label} link`));
+        const fields = document.createElement("div");
+        fields.className = "link-fields";
+        const input = document.createElement("input");
+        input.type = "url"; input.placeholder = `${label} URL`; input.value = link.url || ""; input.dataset.linkUrl = key;
+        fields.append(input);
+        fields.style.display = checkbox.checked ? "block" : "none";
+        checkbox.addEventListener("change", () => { fields.style.display = checkbox.checked ? "block" : "none"; });
+        wrapper.append(checkboxLabel, fields);
+        return wrapper;
+      }
+
+      function readEditor(section) {
+        return [...document.querySelectorAll(`#${section}-editor .editor-item`)].map((card) => {
+          const values = Object.fromEntries([...card.querySelectorAll("[data-key]")].map((input) => [input.dataset.key, input.value.trim()]));
+          if (section === "projects") {
+            values.links = [...card.querySelectorAll("[data-link]:checked")].map((checkbox) => {
+              const key = checkbox.dataset.link;
+              const label = key === "github" ? "GitHub" : "Live demo";
+              const icon = key === "github" ? "./assets/icons/github-icon.svg" : "./assets/icons/live-demo.svg";
+              return { label, url: card.querySelector(`[data-link-url='${key}']`).value.trim(), icon };
+            });
+            values.technologies = values.technologies.split(",").map((tag) => tag.trim()).filter(Boolean);
+          } else if (section === "skills") {
+            return values;
+          } else if (section === "experience") values.details = values.details.split("\n").map((line) => line.trim()).filter(Boolean);
+          return values;
+        });
+      }
+
+      document.querySelectorAll("[data-add]").forEach((button) => button.addEventListener("click", () => {
+        const section = button.dataset.add;
+        if (!portfolioContent) {
+          document.querySelector("#content-status").textContent = "Portfolio content is still loading. Please try again.";
+          return;
+        }
+        portfolioContent[section].push(section === "projects"
+          ? { title: "", description: "", image: "", technologies: [], status: "completed", links: [] }
+          : section === "skills"
+            ? { name: "", level: "", icon: "" }
+          : section === "experience"
+            ? { title: "", period: "", organization: "", details: [] }
+            : { title: "", period: "", organization: "", description: "" });
+        renderEditor(section);
+        if (section === "projects") activeProjectIndex = portfolioContent.projects.length - 1;
+      }));
+
+      document.querySelector("#upload-image").addEventListener("click", () => {
+        if (!portfolioContent.projects.length) {
+          document.querySelector("#content-status").textContent = "Add a project before uploading an image.";
+          return;
+        }
+        document.querySelector("#upload-image-file").click();
+      });
+
+      document.querySelector("#upload-skill-icon").addEventListener("click", () => {
+        document.querySelector("#upload-skill-icon-file").click();
+      });
+
+      document.querySelector("#upload-skill-icon-file").addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const status = document.querySelector("#content-status");
+        try {
+          const data = new FormData();
+          data.append("icon", file);
+          const response = await fetch("/api/skill-icons", { method: "POST", body: data });
+          if (!response.ok) throw new Error((await response.json()).error || "Skill icon upload failed.");
+          const uploaded = await response.json();
+          skillIconOptions.push(uploaded.path);
+          renderFileManagement();
+          renderEditor("skills");
+          status.textContent = "Skill icon uploaded. Select it on a skill and save changes.";
+        } catch (error) {
+          status.textContent = error.message;
+        } finally {
+          event.target.value = "";
+        }
+      });
+
+      document.querySelector("#upload-image-file").addEventListener("change", async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const status = document.querySelector("#content-status");
+        try {
+          const formData = new FormData();
+          formData.append("image", file);
+          const response = await fetch("/api/uploads", { method: "POST", body: formData });
+          if (!response.ok) throw new Error((await response.json()).error || "Image upload failed.");
+          const uploaded = await response.json();
+          const projectIndex = activeProjectIndex;
+          if (!portfolioContent.projects[projectIndex]) {
+            throw new Error("Select a project image field before uploading.");
+          }
+          portfolioContent.projects[projectIndex].image = uploaded.path;
+          imageOptions.push(uploaded.path);
+          renderFileManagement();
+          const projectCard = document.querySelectorAll("#projects-editor .editor-item")[projectIndex];
+          const imageSelect = projectCard.querySelector("[data-key='image']");
+          imageSelect.append(new Option(uploaded.path.split("/").pop(), uploaded.path));
+          imageSelect.value = uploaded.path;
+          status.textContent = "Image uploaded. Save changes to publish it.";
+        } catch (error) {
+          status.textContent = error.message;
+        } finally {
+          event.target.value = "";
+        }
+      });
+
+      async function deleteUploadedAsset(selectId, endpoint, label) {
+        const select = document.querySelector(selectId);
+        const filePath = select.value;
+        if (!filePath) {
+          document.querySelector("#content-status").textContent = `Select an uploaded ${label} first.`;
+          return;
+        }
+        if (!window.confirm(`Delete ${filePath.split("/").pop()}? Existing content that uses it will need a different file.`)) {
+          return;
+        }
+        const status = document.querySelector("#content-status");
+        try {
+          const response = await fetch(`${endpoint}?path=${encodeURIComponent(filePath)}`, { method: "DELETE" });
+          if (!response.ok) throw new Error((await response.json()).error || `Could not delete ${label}.`);
+          if (endpoint === "/api/uploads") {
+            imageOptions = imageOptions.filter((image) => image !== filePath);
+          } else {
+            skillIconOptions = skillIconOptions.filter((icon) => icon !== filePath);
+          }
+          renderFileManagement();
+          renderEditor(endpoint === "/api/uploads" ? "projects" : "skills");
+          status.textContent = `${label[0].toUpperCase()}${label.slice(1)} deleted. Save changes if you removed a reference to it.`;
+        } catch (error) {
+          status.textContent = error.message;
+        }
+      }
+
+      document.querySelector("#delete-image").addEventListener("click", () => {
+        deleteUploadedAsset("#delete-image-select", "/api/uploads", "image");
+      });
+
+      document.querySelector("#delete-icon").addEventListener("click", () => {
+        deleteUploadedAsset("#delete-icon-select", "/api/skill-icons", "SVG");
+      });
+
+      document.querySelector("#save-content").addEventListener("click", async () => {
+        const status = document.querySelector("#content-status");
+        status.textContent = "Saving...";
+        try {
+        const payload = {
+          about: { lead: document.querySelector("#about-lead").value.trim(), body: document.querySelector("#about-body").value.trim() },
+          skills: readEditor("skills"), projects: readEditor("projects"), experience: readEditor("experience"), education: readEditor("education"),
+        };
+        for (const [language, selector] of [["en", "#cv-en-file"], ["de", "#cv-de-file"]]) {
+          const cv = document.querySelector(selector).files[0];
+          if (!cv) continue;
+          const data = new FormData();
+          data.append("cv", cv);
+          const cvResponse = await fetch(`/api/cv/${language}`, { method: "POST", body: data });
+          if (!cvResponse.ok) throw new Error(`${language.toUpperCase()} CV upload failed.`);
+        }
+        const response = await fetch("/api/content", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        status.textContent = response.ok ? "Content saved successfully." : (await response.json()).error || "Could not save content.";
+        if (response.ok) {
+          portfolioContent = payload;
+          localStorage.removeItem("portfolio-preview-draft");
+        }
+        } catch (error) {
+          status.textContent = error.message;
+        }
+      });
+
+      document.querySelector("#preview-content").addEventListener("click", () => {
+        const draft = {
+          about: { lead: document.querySelector("#about-lead").value.trim(), body: document.querySelector("#about-body").value.trim() },
+          skills: readEditor("skills"), projects: readEditor("projects"), experience: readEditor("experience"), education: readEditor("education"),
+        };
+        localStorage.setItem("portfolio-preview-draft", JSON.stringify(draft));
+        const preview = window.open("/", "_blank");
+        if (!preview) document.querySelector("#content-status").textContent = "Allow pop-ups to open the preview.";
+      });
 
       loginForm.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -193,7 +556,11 @@
           return;
         }
         loginForm.reset();
-        loadDashboard();
+        try {
+          await loadDashboard();
+        } catch (error) {
+          loginError.textContent = error.message;
+        }
       });
 
       document.querySelector("#logout").addEventListener("click", async () => {
@@ -211,7 +578,9 @@
           window.alert("The log could not be cleared. Please log in again.");
           return;
         }
-        loadDashboard();
+        loadDashboard().catch((error) => {
+          loginError.textContent = error.message;
+        });
       }
 
       clearContacts.addEventListener("click", () => {
