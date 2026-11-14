@@ -603,9 +603,9 @@ const server = http.createServer(async (request, response) => {
         fs.createReadStream(cvFiles[language]).pipe(response);
         return;
       }
-      if (url.pathname.startsWith("/icons/") || url.pathname.startsWith("/skill-icons/")) {
+      if (url.pathname.startsWith("/icons/") || url.pathname.startsWith("/assets/icons/") || url.pathname.startsWith("/skill-icons/")) {
         const filename = path.basename(url.pathname);
-        const iconDirectory = url.pathname.startsWith("/icons/") ? iconsDir : skillIconsDir;
+        const iconDirectory = url.pathname.startsWith("/skill-icons/") ? skillIconsDir : iconsDir;
         const iconFile = path.join(iconDirectory, filename);
         if (!fs.existsSync(iconFile)) {
           response.writeHead(404);

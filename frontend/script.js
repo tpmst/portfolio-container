@@ -14,6 +14,14 @@ function textElement(tag, text, className) {
   return element;
 }
 
+function assetPath(value) {
+  if (typeof value !== "string") return "";
+  return value
+    .replace(/^\.\/assets\/images\//, "/images/")
+    .replace(/^\.\/assets\/icons\//, "/icons/")
+    .replace(/^\/assets\/icons\//, "/icons/");
+}
+
 function renderContent(content) {
   const about = document.querySelector("#about-content");
   about.replaceChildren(
@@ -31,7 +39,7 @@ function renderContent(content) {
       const detail = document.querySelector("#project-detail");
       detail.replaceChildren(
         textElement("h2", project.title),
-        Object.assign(document.createElement("img"), { src: project.image, alt: project.title }),
+        Object.assign(document.createElement("img"), { src: assetPath(project.image), alt: project.title }),
         textElement("p", project.description)
       );
       const tags = document.createElement("div");
@@ -42,7 +50,7 @@ function renderContent(content) {
     });
     const image = document.createElement("img");
     image.className = "project-img";
-    image.src = project.image;
+    image.src = assetPath(project.image);
     image.alt = project.title;
     const status = textElement("span", project.status === "in-progress" ? "In progress" : project.status[0].toUpperCase() + project.status.slice(1), "project-status");
     const tags = document.createElement("div");
@@ -56,7 +64,7 @@ function renderContent(content) {
       anchor.href = link.url;
       const icon = document.createElement("img");
       icon.className = "project-icons";
-      icon.src = link.icon;
+      icon.src = assetPath(link.icon);
       icon.alt = "";
       anchor.append(icon, document.createTextNode(` ${link.label}`));
       links.append(anchor);
